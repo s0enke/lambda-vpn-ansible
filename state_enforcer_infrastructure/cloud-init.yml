@@ -1,0 +1,55 @@
+#cloud-config
+packages:
+  - python-dev
+  - python-pip
+  - vpnc
+  - dnsmasq
+write_files:
+  - content: |
+      IPSec gateway %(vpn_endpoint)
+
+      IKE DH Group dh2
+      Perfect Forward Secrecy nopfs
+
+      IPSec ID aws-provisioner
+
+      IPSec secret %(ipsec_secret)
+
+      NAT Traversal Mode force-natt
+
+      Xauth username %(ipsec_username) 
+      Xauth password %(ipsec_username)
+
+      Script /etc/vpnc/fritzbox-script
+    path: /etc/vpnc/fritzbox.conf
+    permissions: '0644'
+  - content: |
+      #!/bin/sh
+      IPROUTE=/sbin/ip
+      case "$reason" in
+        pre-init)
+          /etc/vpnc/vpnc-script pre-init
+          ;;
+        connect)
+          INTERNAL_IP4_PREFIX=$(echo $INTERNAL_IP4_ADDRESS | sed -e's/\.[0-9]\+$//')
+          $IPROUTE link set dev "$TUNDEV" up mtu 1024
+          $IPROUTE addr add "$INTERNAL_IP4_ADDRESS/255.255.255.0" peer "$INTERNAL_IP4_ADDRESS" dev "$TUNDEV"
+          $IPROUTE route replace "$INTERNAL_IP4_PREFIX.0/255.255.255.0" dev "$TUNDEV"
+          $IPROUTE route flush cache
+          echo "server=/fritz.box/192.168.1.1" > /etc/dnsmasq.d/vpnc
+          service dnsmasq restart
+          ;;
+        disconnect)
+          $IPROUTE link set dev "$TUNDEV" down
+          ;;
+        *)
+          echo "unknown reason '$reason'. Maybe vpnc-script is out of date" 1>&2
+          exit 1
+          ;;
+      esac
+      exit 0
+    path: /etc/vpnc/fritzbox-script
+    permissions: '0755'
+runcmd:
+  - [ 'vpnc-connect', 'fritzbox' ] 
+  - [ init, 0 ]

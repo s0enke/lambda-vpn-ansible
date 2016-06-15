@@ -1,0 +1,18 @@
+---
+project: lambda-vpn-ansible
+default-region: eu-central-1
+code-bucket: gordon-13a19e1a
+apps:
+  - gordon.contrib.helpers
+  - gordon.contrib.lambdas
+  - state_enforcer_infrastructure
+contexts:
+  default:
+    aws_region: ref://aws_region
+    ami_for_vpn_client: ref://ami_for_vpn_client
+    vpn_endpoint: ref://vpn_endpoint
+    vpn_client_security_groups: ref://vpn_client_security_groups
+    ipsec_secret: ref://ipsec_secret
+    ipsec_username: ref://ipsec_username
+    ipsec_password: ref://ipsec_password
+

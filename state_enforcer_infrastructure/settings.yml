@@ -1,0 +1,17 @@
+lambdas:
+  ansible_vpn_executor:
+    code: . 
+    handler: ansible_vpn_executor.handler
+    runtime: python2.7
+    policies:
+      create_ec2:
+        Version: "2012-10-17"
+        Statement:
+        -
+          Action: 
+            - ec2:RunInstances
+          Effect: Allow
+          Resource:
+            - "*"
+
+
